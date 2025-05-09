@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DILR Question Formatter</title>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f5f7ff;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: var(--secondary);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .form-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .form-section, .output-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        #output {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            min-height: 500px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .option-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .option-row input {
+            flex: 1;
+        }
+        
+        .formatting-toolbar {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .format-btn {
+            padding: 5px 10px;
+            background: #eee;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .image-settings {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>DILR Question Formatter</h1>
+    
+    <div class="form-container">
+        <div class="form-section">
+            <div class="image-settings">
+                <h3>Image Settings</h3>
+                <div class="form-group">
+                    <label for="base-url">Base URL</label>
+                    <input type="text" id="base-url" value="https://red-okapi-967143.hostingersite.com/wp-content/uploads/2025/05/" placeholder="Enter base URL">
+                </div>
+                <div class="form-group">
+                    <label for="image-prefix">Image Prefix</label>
+                    <input type="text" id="image-prefix" value="CAT-Mock-Test-9-dilr-" placeholder="Enter image prefix">
+                </div>
+                <div class="form-group">
+                    <label for="image-number">Image Number</label>
+                    <input type="number" id="image-number" value="11" min="1">
+                </div>
+                <button id="update-image-btn" class="btn">Update Image URL</button>
+                <div class="form-group">
+                    <label>Current Image URL:</label>
+                    <div id="current-image-url" style="word-break: break-all;"></div>
+                    <img id="image-preview" class="image-preview" style="display: none;">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="question-type">Question Type</label>
+                <select id="question-type">
+                    <option value="mcq">MCQ</option>
+                    <option value="tita">TITA</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="question-text">Question Text</label>
+                <div class="formatting-toolbar">
+                    <button class="format-btn" onclick="formatText('question-text', 'strong')">Bold</button>
+                    <button class="format-btn" onclick="formatText('question-text', 'br')">Line Break</button>
+                    <button class="format-btn" onclick="insertImage('question-text')">Add Image</button>
+                </div>
+                <textarea id="question-text" placeholder="Enter the question text..."></textarea>
+            </div>
+            
+            <div id="mcq-fields">
+                <div class="form-group">
+                    <label>Options (format as "Option X: Description")</label>
+                    <div id="options-container">
+                        <div class="option-row">
+                            <input type="text" class="option-input" placeholder="Option A: First option">
+                            <button class="btn remove-option">×</button>
+                        </div>
+                        <div class="option-row">
+                            <input type="text" class="option-input" placeholder="Option B: Second option">
+                            <button class="btn remove-option">×</button>
+                        </div>
+                    </div>
+                    <button id="add-option" class="btn" style="margin-top: 10px;">+ Add Option</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="correct-answer">Correct Answer (select option number, starting from 0)</label>
+                    <select id="correct-answer">
+                        <option value="0">Option 0 (A)</option>
+                        <option value="1">Option 1 (B)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="tita-fields" style="display: none;">
+                <div class="form-group">
+                    <label for="tita-answer">Correct Answer (for TITA)</label>
+                    <input type="text" id="tita-answer" placeholder="Enter exact answer">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="explanation">Explanation</label>
+                <div class="formatting-toolbar">
+                    <button class="format-btn" onclick="formatText('explanation', 'strong')">Bold</button>
+                    <button class="format-btn" onclick="formatText('explanation', 'br')">Line Break</button>
+                    <button class="format-btn" onclick="insertImage('explanation')">Add Image</button>
+                </div>
+                <textarea id="explanation" placeholder="Enter explanation..."></textarea>
+            </div>
+            
+            <div class="btn-group">
+                <button id="add-btn" class="btn btn-primary">Add Question</button>
+                <button id="clear-btn" class="btn">Clear Form</button>
+            </div>
+        </div>
+        
+        <div class="output-section">
+            <h2>Formatted Output</h2>
+            <div id="output">const dilrQuestions = [\n  // Your questions will appear here\n];</div>
+            <div class="btn-group">
+                <button id="copy-btn" class="btn btn-primary">Copy to Clipboard</button>
+                <button id="clear-output-btn" class="btn">Clear Output</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Question data storage
+        const questions = [];
+        let currentImageNumber = 11;
+        
+        // DOM elements
+        const questionTypeSelect = document.getElementById('question-type');
+        const mcqFields = document.getElementById('mcq-fields');
+        const titaFields = document.getElementById('tita-fields');
+        const addOptionBtn = document.getElementById('add-option');
+        const optionsContainer = document.getElementById('options-container');
+        const correctAnswerSelect = document.getElementById('correct-answer');
+        const addBtn = document.getElementById('add-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const output = document.getElementById('output');
+        const copyBtn = document.getElementById('copy-btn');
+        const clearOutputBtn = document.getElementById('clear-output-btn');
+        const baseUrlInput = document.getElementById('base-url');
+        const imagePrefixInput = document.getElementById('image-prefix');
+        const imageNumberInput = document.getElementById('image-number');
+        const updateImageBtn = document.getElementById('update-image-btn');
+        const currentImageUrl = document.getElementById('current-image-url');
+        const imagePreview = document.getElementById('image-preview');
+        
+        // Initialize image URL
+        updateImageUrl();
+        
+        // Update image URL when settings change
+        updateImageBtn.addEventListener('click', updateImageUrl);
+        
+        function updateImageUrl() {
+            currentImageNumber = parseInt(imageNumberInput.value) || 11;
+            const imageUrl = `${baseUrlInput.value}${imagePrefixInput.value}${currentImageNumber}.png`;
+            currentImageUrl.textContent = imageUrl;
+            imagePreview.src = imageUrl;
+            imagePreview.style.display = 'block';
+            imageNumberInput.value = currentImageNumber + 1; // Auto-increment for next image
+        }
+        
+        // Toggle MCQ/TITA fields
+        questionTypeSelect.addEventListener('change', function() {
+            if (this.value === 'mcq') {
+                mcqFields.style.display = 'block';
+                titaFields.style.display = 'none';
+            } else {
+                mcqFields.style.display = 'none';
+                titaFields.style.display = 'block';
+            }
+        });
+        
+        // Add option
+        addOptionBtn.addEventListener('click', function() {
+            const optionCount = document.querySelectorAll('.option-input').length;
+            const optionLetter = String.fromCharCode(65 + optionCount); // A, B, C, etc.
+            const optionRow = document.createElement('div');
+            optionRow.className = 'option-row';
+            optionRow.innerHTML = `
+                <input type="text" class="option-input" placeholder="Option ${optionLetter}: Description">
+                <button class="btn remove-option">×</button>
+            `;
+            optionsContainer.appendChild(optionRow);
+            
+            // Add option to correct answer dropdown
+            const optionElement = document.createElement('option');
+            optionElement.value = optionCount;
+            optionElement.textContent = `Option ${optionCount} (${optionLetter})`;
+            correctAnswerSelect.appendChild(optionElement);
+            
+            // Add event listener for remove button
+            optionRow.querySelector('.remove-option').addEventListener('click', function() {
+                optionRow.remove();
+                updateOptionNumbering();
+                updateCorrectAnswerOptions();
+            });
+        });
+        
+        // Update option numbering after removal
+        function updateOptionNumbering() {
+            const options = document.querySelectorAll('.option-input');
+            options.forEach((input, index) => {
+                const optionLetter = String.fromCharCode(65 + index);
+                input.placeholder = `Option ${optionLetter}: Description`;
+            });
+        }
+        
+        // Update correct answer dropdown options
+        function updateCorrectAnswerOptions() {
+            // Clear existing options
+            correctAnswerSelect.innerHTML = '';
+            
+            // Add new options
+            const optionCount = document.querySelectorAll('.option-input').length;
+            for (let i = 0; i < optionCount; i++) {
+                const optionLetter = String.fromCharCode(65 + i);
+                const optionElement = document.createElement('option');
+                optionElement.value = i;
+                optionElement.textContent = `Option ${i} (${optionLetter})`;
+                correctAnswerSelect.appendChild(optionElement);
+            }
+        }
+        
+        // Remove option event delegation
+        optionsContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-option')) {
+                e.target.closest('.option-row').remove();
+                updateOptionNumbering();
+                updateCorrectAnswerOptions();
+            }
+        });
+        
+        // Formatting functions
+        function formatText(elementId, tag) {
+            const textarea = document.getElementById(elementId);
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            
+            if (tag === 'br') {
+                textarea.value = textarea.value.substring(0, start) + '\n' + textarea.value.substring(end);
+                textarea.selectionStart = textarea.selectionEnd = start + 1;
+            } else {
+                const wrappedText = `<${tag}>${selectedText}</${tag}>`;
+                textarea.value = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
+                textarea.selectionStart = start;
+                textarea.selectionEnd = start + wrappedText.length;
+            }
+            
+            textarea.focus();
+        }
+        
+        function insertImage(elementId) {
+            const textarea = document.getElementById(elementId);
+            const cursorPos = textarea.selectionStart;
+            const imageUrl = `${baseUrlInput.value}${imagePrefixInput.value}${currentImageNumber}.png`;
+            const imageTag = `<img src='${imageUrl}'>`;
+            
+            textarea.value = textarea.value.substring(0, cursorPos) + imageTag + textarea.value.substring(cursorPos);
+            
+            // Position cursor after the image tag
+            textarea.selectionStart = textarea.selectionEnd = cursorPos + imageTag.length;
+            textarea.focus();
+            
+            // Increment image number for next use
+            currentImageNumber++;
+            imageNumberInput.value = currentImageNumber;
+            updateImageUrl();
+        }
+        
+        // Add question
+        addBtn.addEventListener('click', function() {
+            const type = questionTypeSelect.value;
+            const questionText = document.getElementById('question-text').value;
+            const explanation = document.getElementById('explanation').value;
+            
+            if (!questionText) {
+                alert('Please enter question text');
+                return;
+            }
+            
+            const question = {
+                type: type,
+                question: questionText.replace(/\n/g, '\\n'),
+                explanation: explanation.replace(/\n/g, '\\n')
+            };
+            
+            if (type === 'mcq') {
+                const options = Array.from(document.querySelectorAll('.option-input'))
+                    .map(opt => opt.value.trim())
+                    .filter(opt => opt);
+                
+                if (options.length < 2) {
+                    alert('Please add at least 2 options');
+                    return;
+                }
+                
+                const correctAnswer = parseInt(document.getElementById('correct-answer').value);
+                if (isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) {
+                    alert('Please select a valid correct answer');
+                    return;
+                }
+                
+                question.options = options.map(opt => `"${opt}"`);
+                question.correct = correctAnswer;
+            } else {
+                const answer = document.getElementById('tita-answer').value.trim();
+                if (!answer) {
+                    alert('Please enter the correct answer for TITA');
+                    return;
+                }
+                question.correctAnswer = `"${answer}"`;
+            }
+            
+            questions.push(question);
+            updateOutput();
+            clearForm(false); // Don't reset image settings
+        });
+        
+        // Clear form (but preserve image settings)
+        clearBtn.addEventListener('click', function() {
+            clearForm(false);
+        });
+        
+        function clearForm(resetImageSettings = false) {
+            document.getElementById('question-text').value = '';
+            document.getElementById('explanation').value = '';
+            document.getElementById('tita-answer').value = '';
+            document.getElementById('correct-answer').selectedIndex = 0;
+            
+            // Reset options but keep at least 2
+            optionsContainer.innerHTML = `
+                <div class="option-row">
+                    <input type="text" class="option-input" placeholder="Option A: First option">
+                    <button class="btn remove-option">×</button>
+                </div>
+                <div class="option-row">
+                    <input type="text" class="option-input" placeholder="Option B: Second option">
+                    <button class="btn remove-option">×</button>
+                </div>
+            `;
+            
+            // Update correct answer options
+            correctAnswerSelect.innerHTML = `
+                <option value="0">Option 0 (A)</option>
+                <option value="1">Option 1 (B)</option>
+            `;
+            
+            // Add event listeners for remove buttons
+            document.querySelectorAll('.remove-option').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.option-row').remove();
+                    updateOptionNumbering();
+                    updateCorrectAnswerOptions();
+                });
+            });
+            
+            if (resetImageSettings) {
+                baseUrlInput.value = "https://red-okapi-967143.hostingersite.com/wp-content/uploads/2025/05/";
+                imagePrefixInput.value = "CAT-Mock-Test-9-dilr-";
+                imageNumberInput.value = "11";
+                updateImageUrl();
+            }
+        }
+        
+        // Update output
+        function updateOutput() {
+            let outputText = 'const dilrQuestions = [\n';
+            
+            questions.forEach((q, index) => {
+                outputText += '  {\n';
+                outputText += `    type: "${q.type}",\n`;
+                outputText += `    question: "${q.question}",\n`;
+                
+                if (q.type === 'mcq') {
+                    outputText += `    options: [\n      ${q.options.join(',\n      ')}\n    ],\n`;
+                    outputText += `    correct: ${q.correct},\n`;
+                } else {
+                    outputText += `    correctAnswer: ${q.correctAnswer},\n`;
+                }
+                
+                outputText += `    explanation: "${q.explanation}"\n`;
+                outputText += '  }' + (index < questions.length - 1 ? ',' : '') + '\n';
+            });
+            
+            outputText += '];';
+            output.textContent = outputText;
+        }
+        
+        // Copy to clipboard
+        copyBtn.addEventListener('click', function() {
+            navigator.clipboard.writeText(output.textContent)
+                .then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = 'Copied!';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy text. Please try again.');
+                });
+        });
+        
+        // Clear output
+        clearOutputBtn.addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all questions?')) {
+                questions.length = 0;
+                output.textContent = 'const dilrQuestions = [\n  // Your questions will appear here\n];';
+            }
+        });
+        
+        // Initialize
+        updateOutput();
+    </script>
+</body>
+</html>
